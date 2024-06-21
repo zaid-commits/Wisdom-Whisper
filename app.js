@@ -52,3 +52,21 @@ const shareAdvice = () => {
         alert('Wisdom copied to clipboard! Share it with the world.');
     }
 };
+
+
+function toggleTheme() {
+    const htmlElement = document.documentElement;
+    htmlElement.classList.toggle('dark');
+    if (htmlElement.classList.contains('dark')) {
+        localStorage.setItem('theme', 'dark');
+    } else {
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+    }
+});

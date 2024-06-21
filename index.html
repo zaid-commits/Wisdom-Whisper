@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,11 +32,28 @@
                     },
                 },
             },
+        };
+
+        function toggleTheme() {
+            const htmlElement = document.documentElement;
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        });
     </script>
     <style>
-        body{
-            font-weight: 500px;
+        body {
+            font-weight: 500;
         }
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
@@ -51,7 +68,7 @@
         .glow { animation: glow 2s ease-in-out infinite; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-gray-900 text-gray-100 transition-colors duration-300">
+<body class="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <nav class="p-4 md:p-6 bg-gray-800 shadow-lg">
         <div class="container mx-auto flex flex-wrap justify-between items-center">
             <a href="#" class="text-neon-400 text-2xl font-bold glow">WW</a>
@@ -97,7 +114,7 @@
                 <button onclick="filterAdvice('happiness')" class="px-4 py-2 rounded-full bg-gray-700 text-neon-400 hover:bg-gray-600 transition">Happiness</button>
                 <button onclick="filterAdvice('wisdom')" class="px-4 py-2 rounded-full bg-gray-700 text-neon-400 hover:bg-gray-600 transition">Wisdom</button>
             </div>
-            <div class="text-center">
+            <div class="text-center mt-6">
                 <button onclick="toggleTheme()" class="px-4 py-2 rounded-full bg-gray-700 text-neon-400 hover:bg-gray-600 transition">
                     <i class="fas fa-adjust mr-2"></i> Toggle Theme
                 </button>
@@ -125,62 +142,68 @@
                     currentAuthor = data.author;
                     document.getElementById('advice-text').textContent = currentAdvice;
                     document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
-                    document.getElementById('advice').classList.add('float');
-                    setTimeout(() => {
-                        document.getElementById('advice').classList.remove('float');
-                    }, 3000);
-                });
-        }
-
-        function shareAdvice() {
-            if (currentAdvice) {
-                const tweetText = encodeURIComponent(`"${currentAdvice}" - ${currentAuthor}\n\nShared via #WisdomWhisper`);
-                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-            } else {
-                alert('Get some advice first!');
-            }
+                })
+                .catch(error => console.error('Error:', error));
         }
 
         function favoriteAdvice() {
-            if (currentAdvice) {
-                favorites.push({ text: currentAdvice, author: currentAuthor });
+            if (currentAdvice && !favorites.includes(currentAdvice)) {
+                favorites.push(currentAdvice);
                 localStorage.setItem('favorites', JSON.stringify(favorites));
                 alert('Advice added to favorites!');
-            } else {
-                alert('Get some advice first!');
             }
         }
 
         function copyAdvice() {
             if (currentAdvice) {
-                navigator.clipboard.writeText(`"${currentAdvice}" - ${currentAuthor}`);
-                alert('Advice copied to clipboard!');
-            } else {
-                alert('Get some advice first!');
+                navigator.clipboard.writeText(`${currentAdvice} - ${currentAuthor}`).then(() => {
+                    alert('Advice copied to clipboard!');
+                }).catch(error => console.error('Error copying text:', error));
+            }
+        }
+
+        function shareAdvice() {
+            if (currentAdvice) {
+                const shareText = `${currentAdvice} - ${currentAuthor}`;
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Wisdom Whisper',
+                        text: shareText,
+                        url: window.location.href
+                    }).catch(error => console.error('Error sharing:', error));
+                } else {
+                    alert('Share API not supported in this browser.');
+                }
             }
         }
 
         function filterAdvice(category) {
-            fetch(`https://api.quotable.io/random?tags=${category}`)
+            fetch(`https://api.quotable.io/quotes?tags=${category}`)
                 .then(response => response.json())
                 .then(data => {
-                    currentAdvice = data.content;
-                    currentAuthor = data.author;
+                    const randomIndex = Math.floor(Math.random() * data.results.length);
+                    currentAdvice = data.results[randomIndex].content;
+                    currentAuthor = data.results[randomIndex].author;
                     document.getElementById('advice-text').textContent = currentAdvice;
                     document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
-                });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        function toggleTheme() {
-            document.documentElement.classList.toggle('dark');
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const menu = document.getElementById('menu');
 
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            document.getElementById('menu').classList.toggle('hidden');
+            mobileMenuButton.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+
+            // Apply the user's preferred theme on page load
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
         });
-
-        // Initialize
-        getAdvice();
     </script>
 </body>
 </html>

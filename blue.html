@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisdom Whisper - Modern Advice App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neo: {
+                            50: '#F0F7FF',
+                            100: '#C2E0FF',
+                            200: '#99CCF3',
+                            300: '#66B2FF',
+                            400: '#3399FF',
+                            500: '#007FFF',
+                            600: '#0066CC',
+                            700: '#004C99',
+                            800: '#003366',
+                            900: '#001933',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Manrope', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-neo-50 to-neo-100">
+    <nav class="p-6 bg-white shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-neo-600 text-2xl font-bold">WW</a>
+            <div class="space-x-6">
+                <a href="#" class="text-neo-600 hover:text-neo-800 transition">Home</a>
+                <a href="#" class="text-neo-600 hover:text-neo-800 transition">Categories</a>
+                <a href="#" class="text-neo-600 hover:text-neo-800 transition">Favorites</a>
+                <a href="#" class="text-neo-600 hover:text-neo-800 transition">About</a>
+            </div>
+        </div>
+    </nav>
+    <main class="flex-grow flex items-center justify-center p-6">
+        <div class="max-w-2xl w-full">
+            <h1 class="text-6xl font-bold mb-8 text-center text-neo-800 leading-tight">
+                Wisdom<span class="text-neo-500">Whisper</span>
+            </h1>
+            <div id="advice" class="mb-8 p-8 bg-white rounded-3xl shadow-lg min-h-[200px] flex flex-col items-center justify-center relative overflow-hidden group">
+                <div class="absolute top-2 right-2 flex space-x-2">
+                    <button onclick="favoriteAdvice()" class="text-neo-300 hover:text-neo-500 transition">
+                        <i class="far fa-heart text-xl"></i>
+                    </button>
+                    <button onclick="copyAdvice()" class="text-neo-300 hover:text-neo-500 transition">
+                        <i class="far fa-copy text-xl"></i>
+                    </button>
+                </div>
+                <p id="advice-text" class="text-2xl text-neo-700 font-light leading-relaxed text-center mb-4">Tap below for a spark of insight...</p>
+                <p id="advice-author" class="text-neo-500 font-medium"></p>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+                <button onclick="getAdvice()" class="bg-neo-500 text-white font-semibold py-3 px-8 rounded-full transition duration-300 ease-in-out hover:bg-neo-600 focus:outline-none focus:ring-2 focus:ring-neo-400 focus:ring-opacity-50 flex items-center justify-center shadow-md hover:shadow-lg">
+                    <i class="fas fa-lightbulb mr-2"></i> Inspire Me
+                </button>
+                <button onclick="shareAdvice()" class="bg-white text-neo-600 font-semibold py-3 px-8 rounded-full transition duration-300 ease-in-out hover:bg-neo-100 focus:outline-none focus:ring-2 focus:ring-neo-400 focus:ring-opacity-50 flex items-center justify-center border border-neo-300 shadow-md hover:shadow-lg">
+                    <i class="fas fa-share-alt mr-2"></i> Share Wisdom
+                </button>
+            </div>
+            <div class="flex justify-center space-x-4 mb-8">
+                <button onclick="filterAdvice('motivation')" class="px-4 py-2 rounded-full bg-neo-200 text-neo-700 hover:bg-neo-300 transition">Motivation</button>
+                <button onclick="filterAdvice('success')" class="px-4 py-2 rounded-full bg-neo-200 text-neo-700 hover:bg-neo-300 transition">Success</button>
+                <button onclick="filterAdvice('happiness')" class="px-4 py-2 rounded-full bg-neo-200 text-neo-700 hover:bg-neo-300 transition">Happiness</button>
+            </div>
+            <div class="text-center">
+                <button onclick="toggleDarkMode()" class="px-4 py-2 rounded-full bg-neo-700 text-white hover:bg-neo-800 transition">
+                    <i class="fas fa-moon mr-2"></i> Toggle Dark Mode
+                </button>
+            </div>
+        </div>
+    </main>
+    <footer class="py-6 text-center text-neo-600 bg-white shadow-inner">
+        <p class="mb-4">&copy; 2024 Wisdom Whisper | Crafted with care</p>
+        <div class="flex justify-center space-x-6">
+            <a href="#" class="hover:text-neo-800 transition"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="hover:text-neo-800 transition"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="hover:text-neo-800 transition"><i class="fab fa-facebook"></i></a>
+        </div>
+    </footer>
+    <script>
+        let currentAdvice = '';
+        let currentAuthor = '';
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+        function getAdvice() {
+            fetch('https://api.quotable.io/random')
+                .then(response => response.json())
+                .then(data => {
+                    currentAdvice = data.content;
+                    currentAuthor = data.author;
+                    document.getElementById('advice-text').textContent = currentAdvice;
+                    document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
+                    document.getElementById('advice').classList.add('float');
+                    setTimeout(() => {
+                        document.getElementById('advice').classList.remove('float');
+                    }, 3000);
+                });
+        }
+
+        function shareAdvice() {
+            if (currentAdvice) {
+                const tweetText = encodeURIComponent(`"${currentAdvice}" - ${currentAuthor}\n\nShared via #WisdomWhisper`);
+                window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+            } else {
+                alert('Get some advice first!');
+            }
+        }
+
+        function favoriteAdvice() {
+            if (currentAdvice) {
+                favorites.push({ text: currentAdvice, author: currentAuthor });
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                alert('Advice added to favorites!');
+            } else {
+                alert('Get some advice first!');
+            }
+        }
+
+        function copyAdvice() {
+            if (currentAdvice) {
+                navigator.clipboard.writeText(`"${currentAdvice}" - ${currentAuthor}`);
+                alert('Advice copied to clipboard!');
+            } else {
+                alert('Get some advice first!');
+            }
+        }
+
+        function filterAdvice(category) {
+            fetch(`https://api.quotable.io/random?tags=${category}`)
+                .then(response => response.json())
+                .then(data => {
+                    currentAdvice = data.content;
+                    currentAuthor = data.author;
+                    document.getElementById('advice-text').textContent = currentAdvice;
+                    document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
+                });
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            // Add more elements to toggle dark mode as needed
+        }
+
+        // Initialize
+        getAdvice();
+    </script>
+</body>
+</html>
