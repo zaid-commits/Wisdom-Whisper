@@ -1,70 +1,72 @@
-const adviceElement = document.getElementById('advice');
-const getAdviceButton = document.querySelector('button');
+let currentAdvice = '';
+let currentAuthor = '';
+let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
-const getAdvice = async () => {
-    getAdviceButton.disabled = true;
-    getAdviceButton.classList.add('opacity-50', 'cursor-not-allowed');
-    adviceElement.innerHTML = '<p class="text-2xl text-white font-light italic leading-relaxed">Channeling wisdom...</p>';
-
-    const timestamp = Date.now();
-    const url = `https://api.adviceslip.com/advice?timestamp=${timestamp}`;
-   
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        displayAdvice(data);
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        adviceElement.innerHTML = '<p class="text-2xl text-red-300 font-light italic leading-relaxed">Oops! Our wisdom well is dry. Try again soon.</p>';
-    } finally {
-        getAdviceButton.disabled = false;
-        getAdviceButton.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
-};
-
-const displayAdvice = (data) => {
-    adviceElement.innerHTML = `
-        <p class="text-2xl text-white font-light italic leading-relaxed">"${data.slip.advice}"</p>
-        <p class="text-sm text-indigo-300 mt-4 font-semibold">WISDOM #${data.slip.id}</p>
-    `;
-};
-
-const shareAdvice = () => {
-    const adviceText = document.querySelector('#advice p').textContent;
-    if (navigator.share) {
-        navigator.share({
-            title: 'Wisdom from Wisdom Whisper',
-            text: adviceText,
-            url: window.location.href,
+function getAdvice() {
+    fetch('https://api.quotable.io/random')
+        .then(response => response.json())
+        .then(data => {
+            currentAdvice = data.content;
+            currentAuthor = data.author;
+            document.getElementById('advice-text').textContent = currentAdvice;
+            document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
         })
-        .then(() => console.log('Successful share'))
-        .catch((error) => console.log('Error sharing', error));
-    } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = adviceText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('Wisdom copied to clipboard! Share it with the world.');
-    }
-};
+        .catch(error => console.error('Error:', error));
+}
 
-
-function toggleTheme() {
-    const htmlElement = document.documentElement;
-    htmlElement.classList.toggle('dark');
-    if (htmlElement.classList.contains('dark')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
+function favoriteAdvice() {
+    if (currentAdvice && !favorites.includes(currentAdvice)) {
+        favorites.push(currentAdvice);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        alert('Advice added to favorites!');
     }
 }
 
+function copyAdvice() {
+    if (currentAdvice) {
+        navigator.clipboard.writeText(`${currentAdvice} - ${currentAuthor}`).then(() => {
+            alert('Advice copied to clipboard!');
+        }).catch(error => console.error('Error copying text:', error));
+    }
+}
+
+function shareAdvice() {
+    if (currentAdvice) {
+        const shareText = `${currentAdvice} - ${currentAuthor}`;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Wisdom Whisper',
+                text: shareText,
+                url: window.location.href
+            }).catch(error => console.error('Error sharing:', error));
+        } else {
+            alert('Share API not supported in this browser.');
+        }
+    }
+}
+
+function filterAdvice(category) {
+    fetch(`https://api.quotable.io/quotes?tags=${category}`)
+        .then(response => response.json())
+        .then(data => {
+            const randomIndex = Math.floor(Math.random() * data.results.length);
+            currentAdvice = data.results[randomIndex].content;
+            currentAuthor = data.results[randomIndex].author;
+            document.getElementById('advice-text').textContent = currentAdvice;
+            document.getElementById('advice-author').textContent = `- ${currentAuthor}`;
+        })
+        .catch(error => console.error('Error:', error));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('menu');
+
+    mobileMenuButton.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+    });
+
+
     const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'dark') {
         document.documentElement.classList.add('dark');
